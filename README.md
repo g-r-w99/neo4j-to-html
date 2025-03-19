@@ -30,8 +30,8 @@ NtH is a web-based tool that allows users to execute Neo4j Cypher queries and vi
    ```sh
    Frontend:
    cd frontend
-   npm install neo4j-driver
-   npm install 
+   npm install
+   npm install neo4j-driver    
    ```
 
 ## Usage
@@ -46,7 +46,6 @@ Run the Express.js server:
 Run the React application:
 ```sh
    cd frontend
-
    npm start
 ```
 The application will be available at `http://localhost:3000`
