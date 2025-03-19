@@ -19,7 +19,7 @@ NtH is a web-based tool that allows users to execute Neo4j Cypher queries and vi
 1. Clone the repository:
    ```sh
    git clone https://github.com/g-r-w99/neo4j-to-html.git
-   cd neovis
+   cd neo4j-to-html
    ```
 2. Install dependencies:
    ```sh
