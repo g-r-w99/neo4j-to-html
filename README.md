@@ -26,7 +26,7 @@ NtH is a web-based tool that allows users to execute Neo4j Cypher queries and vi
    Backend:
    cd backend
    npm install express neo4j-driver cors
-=   ```
+   ```
    ```sh
    Frontend:
    cd frontend
