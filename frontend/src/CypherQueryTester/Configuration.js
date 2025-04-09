@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import neo4j from "neo4j-driver";
-import "./configuration.css";
 
 const ConfigurationPage = () => {
   const [uri, setUri] = useState("");
@@ -11,56 +10,58 @@ const ConfigurationPage = () => {
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+
   useEffect(() => {
     const savedUri = sessionStorage.getItem("neo4j_uri");
     const savedUsername = sessionStorage.getItem("neo4j_username");
     const savedPassword = sessionStorage.getItem("neo4j_password");
-     const savedNodes = sessionStorage.getItem("neo4j_nodes");
+    const savedNodes = sessionStorage.getItem("neo4j_nodes");
 
     if (savedUri && savedUsername && savedPassword) {
-        setUri(savedUri);
-        setUsername(savedUsername);
-        setPassword(savedPassword);
-        setConnected(true);
+      setUri(savedUri);
+      setUsername(savedUsername);
+      setPassword(savedPassword);
+      setConnected(true);
     }
 
     if (savedNodes) {
-        setNodes(JSON.parse(savedNodes)); 
+      setNodes(JSON.parse(savedNodes));
     }
-}, []);
+  }, []);
 
 
   const connectToNeo4j = async () => {
     setError("");
+    setLoading(true);
     try {
       const driver = neo4j.driver(uri, neo4j.auth.basic(username, password));
       const session = driver.session();
-
-      const result = await session.run(
-        "CALL db.labels() YIELD label RETURN label"
-      );
+      const result = await session.run("CALL db.labels() YIELD label RETURN label");
       const fetchedNodes = result.records.map((record) => ({
         label: record.get("label"),
       }));
-
       setNodes(fetchedNodes);
       setConnected(true);
-
       sessionStorage.setItem("neo4j_uri", uri);
       sessionStorage.setItem("neo4j_username", username);
       sessionStorage.setItem("neo4j_password", password);
-      sessionStorage.setItem("neo4j_nodes", JSON.stringify(fetchedNodes)); 
-
-
+      sessionStorage.setItem("neo4j_nodes", JSON.stringify(fetchedNodes));
       await session.close();
       await driver.close();
     } catch (err) {
       setError("Failed to connect. Check your credentials and try again.");
       console.error("Connection error:", err);
+    } finally {
+      setLoading(false);
     }
   };
+  
 
-  const handleNodeClick = (node) => {
+
+ const handleNodeClick = (node) => {
     navigate("/cypherquerytester", {
       state: {
         selectedNode: node,
@@ -72,60 +73,108 @@ const ConfigurationPage = () => {
   };
 
   const handleLogout = () => {
-    sessionStorage.clear(); 
+    sessionStorage.clear();
     setUri("");
     setUsername("");
     setPassword("");
-    setNodes([]); 
+    setNodes([]);
     setConnected(false);
-};
+  };
+
 
   return (
-    <div className="container">
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-sky-100 to-white flex flex-col items-center justify-center px-4 py-10 font-sans relative overflow-hidden">
+      <div className="absolute top-6 left-6 flex items-center gap-2 text-blue-800 font-semibold text-xl">
+        <svg className="w-6 h-6 text-blue-600 animate-bounce" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path d="M12 11c0-3 3-3 3-6s-3-3-3-3-3 0-3 3 3 3 3 6z" />
+          <path d="M12 17v.01" />
+          <path d="M12 20h.01" />
+        </svg>
+        NeoGraph Explorer
+      </div>
+
       {connected && (
-        <button onClick={handleLogout} className="logout-button">
+        <button
+          onClick={handleLogout}
+          className="absolute top-6 right-6 flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-full shadow-md hover:bg-red-600 transition"
+        >
           Logout
         </button>
       )}
 
       {!connected ? (
-        <>
-          <h1 className="title">Enter Credentials</h1>
-          <div className="input-container-cf">
+        <div className="backdrop-blur-md bg-white/70 shadow-xl rounded-3xl px-10 py-12 w-full max-w-lg animate-fadeIn relative z-10">
+          <h1 className="text-4xl font-bold text-center text-blue-700 mb-2">Welcome</h1>
+          <p className="text-gray-600 text-sm text-center mb-8">Connect to your Neo4j database</p>
+
+          <div className="space-y-6">
             <input
-              className="input-field"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
               type="text"
               placeholder="Neo4j URI (e.g., neo4j+s://example.com)"
               value={uri}
               onChange={(e) => setUri(e.target.value)}
             />
             <input
-              className="input-field"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
               type="text"
               placeholder="Username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
-            <input
-              className="input-field"
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <button onClick={connectToNeo4j}>Connect</button>
-            {error && <p className="error-message">{error}</p>}
+
+             <div className="relative">
+              <input
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 pr-12"
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-500"
+              >
+                {showPassword ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-.2.66-.485 1.288-.848 1.874M15 15l4.243 4.243M4.222 4.222l15.556 15.556" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 4.5c4.392 0 8.25 3.358 9.542 7.5-1.292 4.142-5.15 7.5-9.542 7.5s-8.25-3.358-9.542-7.5C3.75 7.858 7.608 4.5 12 4.5z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </button>
+            </div>
+
+            <button
+              onClick={connectToNeo4j}
+              className="w-full bg-blue-600 text-white py-3 font-semibold rounded-lg hover:bg-blue-700 transition duration-150 flex items-center justify-center gap-2"
+              disabled={loading}
+            >
+              {loading && (
+                <svg className="w-5 h-5 animate-spin text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10" strokeOpacity="0.3" />
+                  <path d="M12 2a10 10 0 0110 10" />
+                </svg>
+              )}
+              {loading ? "Connecting..." : "Connect"}
+            </button>
+            {error && <p className="text-red-600 text-sm text-center">{error}</p>}
           </div>
-        </>
+        </div>
       ) : (
-        <div>
-          <h2 className="title">Available Node Types</h2>
-          <div className="nodes-container">
+        <div className="w-full max-w-5xl bg-white rounded-3xl shadow-xl px-8 py-10 mt-6 animate-fadeIn">
+          <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Available Node Types</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
             {nodes.map((node, index) => (
               <div
                 key={index}
                 onClick={() => handleNodeClick(node)}
-                className="node-box"
+                className="cursor-pointer bg-white border border-gray-200 hover:bg-blue-50 hover:shadow-lg transform hover:scale-105 transition-all duration-200 rounded-xl p-4 text-center text-blue-700 font-medium"
               >
                 {node.label}
               </div>
@@ -135,6 +184,8 @@ const ConfigurationPage = () => {
       )}
     </div>
   );
+
+
 };
 
 export default ConfigurationPage;
